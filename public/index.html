@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Prompt Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#242220;
+    --card:#2E2B27;
+    --card-2:#39352F;
+    --line:#443F38;
+    --chalk:#EDE8DE;
+    --muted:#A39C8F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:780px;margin:0 auto;padding:44px 24px 80px;}
+  header{margin-bottom:30px;}
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 6px 0;
+    letter-spacing:-.01em;
+  }
+  header p{
+    color:var(--muted);
+    font-size:14.5px;
+    margin:0;
+    line-height:1.5;
+  }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    margin-bottom:28px;
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .tab{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:'Space Grotesk',sans-serif;
+    font-size:13.5px;
+    font-weight:500;
+    padding:10px 14px 12px 4px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    flex-shrink:0;
+  }
+  .tab.active{color:var(--chalk);}
+  .tab[data-mode="photo"].active{border-bottom-color:#C1573F;}
+  .tab[data-mode="research"].active{border-bottom-color:#5B8C82;}
+  .tab[data-mode="fix"].active{border-bottom-color:#8A7CB0;}
+  .tab[data-mode="resume"].active{border-bottom-color:#C7973F;}
+  .tab[data-mode="notes"].active{border-bottom-color:#7A9B68;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .dropzone{
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    background:var(--card);
+    transition:border-color .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--accent, #C1573F);}
+  .dropzone p{margin:0;color:var(--muted);font-size:13.5px;}
+  .dropzone .big{font-size:14.5px;color:var(--chalk);margin-bottom:4px;}
+
+  .preview-wrap{position:relative;display:inline-block;margin-bottom:18px;}
+  .preview-wrap img{
+    max-width:100%;
+    max-height:340px;
+    border-radius:8px;
+    display:block;
+  }
+  .bracket{
+    position:absolute;
+    width:22px;height:22px;
+    border-color:var(--accent, #C1573F);
+    border-style:solid;
+    border-width:0;
+  }
+  .bracket.tl{top:-8px;left:-8px;border-top-width:2px;border-left-width:2px;border-radius:4px 0 0 0;}
+  .bracket.tr{top:-8px;right:-8px;border-top-width:2px;border-right-width:2px;border-radius:0 4px 0 0;}
+  .bracket.bl{bottom:-8px;left:-8px;border-bottom-width:2px;border-left-width:2px;border-radius:0 0 0 4px;}
+  .bracket.br{bottom:-8px;right:-8px;border-bottom-width:2px;border-right-width:2px;border-radius:0 0 4px 0;}
+
+  .row{display:flex;gap:10px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;}
+
+  textarea, input[type=text]{
+    width:100%;
+    padding:12px 14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    line-height:1.5;
+  }
+  textarea{min-height:96px;resize:vertical;}
+  textarea:focus, input:focus, select:focus{outline:none;border-color:var(--accent, #C1573F);}
+
+  label.field-label{
+    display:block;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin-bottom:7px;
+  }
+  .field{margin-bottom:16px;}
+
+  select{
+    padding:10px 12px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+  }
+
+  .btn{
+    background:var(--accent, #C1573F);
+    color:#1B1A17;
+    border:none;
+    padding:11px 22px;
+    border-radius:8px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .btn:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn-ghost{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:10px 16px;
+    border-radius:8px;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--muted);}
+
+  .status{
+    font-size:13.5px;
+    color:var(--muted);
+    margin:10px 0;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .spinner{
+    width:13px;height:13px;
+    border:2px solid var(--line);
+    border-top-color:var(--accent, #C1573F);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .output{
+    margin-top:24px;
+    background:var(--card-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 20px 16px 20px;
+  }
+  .output-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .output-label span{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+  }
+  .prompt-text{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    line-height:1.65;
+    color:var(--chalk);
+    white-space:pre-wrap;
+    margin:0 0 14px 0;
+  }
+  .breakdown{
+    border-top:1px solid var(--line);
+    padding-top:14px;
+    margin-top:4px;
+  }
+  .breakdown-item{margin-bottom:10px;}
+  .breakdown-item .k{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--accent, #C1573F);
+    margin-bottom:2px;
+  }
+  .breakdown-item .v{font-size:13.5px;color:var(--muted);line-height:1.5;}
+
+  .error{
+    background:var(--accent-soft, #3A2822);
+    border:1px solid var(--accent, #C1573F);
+    color:#F0C6BC;
+    padding:10px 14px;
+    border-radius:8px;
+    font-size:13.5px;
+    margin-top:14px;
+  }
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--card-2);border:1px solid var(--line);color:var(--chalk);
+    padding:9px 18px;border-radius:8px;font-size:13px;z-index:20;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Prompt forge</h1>
+    <p>Give it something to work with. Get back the exact prompt to use.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-mode="photo" onclick="switchTab('photo', this)">Recreate a photo</button>
+    <button class="tab" data-mode="research" onclick="switchTab('research', this)">Research a topic</button>
+    <button class="tab" data-mode="fix" onclick="switchTab('fix', this)">Fix my prompt</button>
+    <button class="tab" data-mode="resume" onclick="switchTab('resume', this)">Job to resume</button>
+    <button class="tab" data-mode="notes" onclick="switchTab('notes', this)">Notes to writing</button>
+  </div>
+
+  <div class="panel active" id="panel-photo" style="--accent:#C1573F;--accent-soft:#3A2822;">
+    <div id="dropzone" class="dropzone" onclick="document.getElementById('file-input').click()">
+      <p class="big">Drop a photo here, or click to upload</p>
+      <p>PNG or JPG · analyzed to extract a recreation prompt</p>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none;">
+    <div id="preview-holder"></div>
+    <div class="row" id="photo-actions" style="display:none;">
+      <button class="btn" id="analyze-btn" onclick="analyzePhoto()">Analyze photo</button>
+      <button class="btn-ghost" onclick="resetPhoto()">Choose another</button>
+    </div>
+    <div id="photo-status"></div>
+    <div id="photo-output"></div>
+  </div>
+
+  <div class="panel" id="panel-research" style="--accent:#5B8C82;--accent-soft:#233330;">
+    <div class="field">
+      <label class="field-label">What do you want to learn about?</label>
+      <textarea id="topic-input" placeholder="e.g. how tariffs affect small e-commerce businesses"></textarea>
+    </div>
+    <div class="row">
+      <div>
+        <label class="field-label">Depth</label>
+        <select id="depth-select">
+          <option value="a quick overview">Quick overview</option>
+          <option value="a solid working understanding" selected>Working understanding</option>
+          <option value="deep, expert-level detail">Deep / expert-level</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Purpose</label>
+        <select id="purpose-select">
+          <option value="general curiosity" selected>Just curious</option>
+          <option value="making a decision">Making a decision</option>
+          <option value="writing or presenting on it">Writing / presenting</option>
+          <option value="academic study">Academic study</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="research-btn" onclick="generateResearchPrompt()">Generate prompt</button>
+    <div id="research-status"></div>
+    <div id="research-output"></div>
+  </div>
+
+  <div class="panel" id="panel-fix" style="--accent:#8A7CB0;--accent-soft:#2A2733;">
+    <div class="field">
+      <label class="field-label">Paste the prompt that's not working</label>
+      <textarea id="fix-prompt-input" placeholder="e.g. write me something about dogs"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">What's going wrong? (optional)</label>
+      <input type="text" id="fix-issue-input" placeholder="e.g. answers are too generic, or too long">
+    </div>
+    <button class="btn" id="fix-btn" onclick="fixMyPrompt()">Rewrite prompt</button>
+    <div id="fix-status"></div>
+    <div id="fix-output"></div>
+  </div>
+
+  <div class="panel" id="panel-resume" style="--accent:#C7973F;--accent-soft:#332B1B;">
+    <div class="field">
+      <label class="field-label">Paste the job description</label>
+      <textarea id="resume-job-input" placeholder="Paste the full job posting here"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Your background (roles, skills, achievements)</label>
+      <textarea id="resume-bg-input" placeholder="e.g. 4 years as a project manager, led a team of 6, shipped a CRM migration..."></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label">Document</label>
+      <select id="resume-doc-select">
+        <option value="resume" selected>Resume</option>
+        <option value="cover letter">Cover letter</option>
+        <option value="both a resume and a cover letter">Both</option>
+      </select>
+    </div>
+    <button class="btn" id="resume-btn" onclick="generateResumePrompt()">Generate prompt</button>
+    <div id="resume-status"></div>
+    <div id="resume-output"></div>
+  </div>
+
+  <div class="panel" id="panel-notes" style="--accent:#7A9B68;--accent-soft:#232C1F;">
+    <div class="field">
+      <label class="field-label">Paste your messy notes or brain dump</label>
+      <textarea id="notes-input" placeholder="Rough thoughts, bullet points, half-formed ideas — whatever you've got"></textarea>
+    </div>
+    <div class="row">
+      <div>
+        <label class="field-label">Turn it into</label>
+        <select id="notes-format-select">
+          <option value="a blog post" selected>Blog post</option>
+          <option value="a professional email">Email</option>
+          <option value="a social media post">Social post</option>
+          <option value="a short video script">Video script</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Tone</label>
+        <select id="notes-tone-select">
+          <option value="conversational and warm" selected>Conversational</option>
+          <option value="professional and polished">Professional</option>
+          <option value="witty and casual">Witty</option>
+          <option value="direct and no-nonsense">Direct</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="notes-btn" onclick="generateNotesPrompt()">Generate prompt</button>
+    <div id="notes-status"></div>
+    <div id="notes-output"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let uploadedImage = null;
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+function switchTab(name, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function copyText(btn){
+  const text = decodeURIComponent(btn.getAttribute('data-text'));
+  navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard'));
+}
+
+function renderOutput(outputEl, parsed, breakdownFields){
+  const rows = breakdownFields.map(f => `
+    <div class="breakdown-item">
+      <div class="k">${escapeHtml(f.label)}</div>
+      <div class="v">${escapeHtml(parsed[f.key]||'')}</div>
+    </div>`).join('');
+  outputEl.innerHTML = `
+    <div class="output">
+      <div class="output-label">
+        <span>Prompt</span>
+        <button class="btn-ghost" onclick="copyText(this)" data-text="${encodeURIComponent(parsed.prompt||'')}">Copy</button>
+      </div>
+      <p class="prompt-text">${escapeHtml(parsed.prompt||'')}</p>
+      <div class="breakdown">${rows}</div>
+    </div>`;
+}
+
+// Calls our own backend (server.js), which holds the real Anthropic API key.
+// The backend builds the system prompt server-side and returns parsed JSON.
+async function callBackend(endpoint, payload){
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if(!response.ok){
+    throw new Error(data.error || 'Request failed');
+  }
+  return data;
+}
+
+async function runMode({statusEl, outputEl, btn, loadingMsg, errorMsg, endpoint, payload, breakdownFields}){
+  btn.disabled = true;
+  outputEl.innerHTML = '';
+  statusEl.innerHTML = `<div class="status"><div class="spinner"></div>${loadingMsg}</div>`;
+  try{
+    const parsed = await callBackend(endpoint, payload);
+    statusEl.innerHTML = '';
+    renderOutput(outputEl, parsed, breakdownFields);
+  }catch(e){
+    statusEl.innerHTML = `<div class="error">${errorMsg}</div>`;
+  }
+  btn.disabled = false;
+}
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+dropzone.addEventListener('dragover', e=>{e.preventDefault(); dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave', ()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e=>{
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file){
+  if(!file.type.startsWith('image/')){
+    showToast('Please choose an image file');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    uploadedImage = { dataUrl: reader.result, mediaType: file.type, base64: reader.result.split(',')[1] };
+    document.getElementById('preview-holder').innerHTML = `
+      <div class="preview-wrap">
+        <img src="${reader.result}">
+        <div class="bracket tl"></div><div class="bracket tr"></div>
+        <div class="bracket bl"></div><div class="bracket br"></div>
+      </div>`;
+    document.getElementById('dropzone').style.display = 'none';
+    document.getElementById('photo-actions').style.display = 'flex';
+    document.getElementById('photo-output').innerHTML = '';
+    document.getElementById('photo-status').innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetPhoto(){
+  uploadedImage = null;
+  document.getElementById('preview-holder').innerHTML = '';
+  document.getElementById('dropzone').style.display = 'block';
+  document.getElementById('photo-actions').style.display = 'none';
+  document.getElementById('photo-output').innerHTML = '';
+  document.getElementById('photo-status').innerHTML = '';
+  fileInput.value = '';
+}
+
+async function analyzePhoto(){
+  if(!uploadedImage) return;
+  await runMode({
+    statusEl: document.getElementById('photo-status'),
+    outputEl: document.getElementById('photo-output'),
+    btn: document.getElementById('analyze-btn'),
+    loadingMsg: 'Analyzing composition, lighting, and style…',
+    errorMsg: "Couldn't analyze that photo. Try again in a moment.",
+    endpoint: '/api/photo',
+    payload: { mediaType: uploadedImage.mediaType, base64: uploadedImage.base64 },
+    breakdownFields: [
+      {key:'subject', label:'Subject'},
+      {key:'composition', label:'Composition'},
+      {key:'lighting', label:'Lighting'},
+      {key:'color_palette', label:'Color palette'},
+      {key:'style', label:'Style'}
+    ]
+  });
+}
+
+async function generateResearchPrompt(){
+  const topic = document.getElementById('topic-input').value.trim();
+  if(!topic){ showToast('Describe what you want to learn about first'); return; }
+  const depth = document.getElementById('depth-select').value;
+  const purpose = document.getElementById('purpose-select').value;
+  await runMode({
+    statusEl: document.getElementById('research-status'),
+    outputEl: document.getElementById('research-output'),
+    btn: document.getElementById('research-btn'),
+    loadingMsg: 'Drafting a research prompt…',
+    errorMsg: "Couldn't draft that prompt. Try again in a moment.",
+    endpoint: '/api/research',
+    payload: { topic, depth, purpose },
+    breakdownFields: [
+      {key:'key_angles', label:'Key angles covered'},
+      {key:'sources_to_request', label:'Sources requested'},
+      {key:'output_format', label:'Output format'}
+    ]
+  });
+}
+
+async function fixMyPrompt(){
+  const prompt = document.getElementById('fix-prompt-input').value.trim();
+  if(!prompt){ showToast('Paste the prompt you want fixed first'); return; }
+  const issue = document.getElementById('fix-issue-input').value.trim();
+  await runMode({
+    statusEl: document.getElementById('fix-status'),
+    outputEl: document.getElementById('fix-output'),
+    btn: document.getElementById('fix-btn'),
+    loadingMsg: 'Diagnosing and rewriting…',
+    errorMsg: "Couldn't rewrite that prompt. Try again in a moment.",
+    endpoint: '/api/fix',
+    payload: { prompt, issue },
+    breakdownFields: [
+      {key:'issues_found', label:'Issues found'},
+      {key:'what_changed', label:'What changed'},
+      {key:'best_for_model', label:'Best suited for'}
+    ]
+  });
+}
+
+async function generateResumePrompt(){
+  const job = document.getElementById('resume-job-input').value.trim();
+  const background = document.getElementById('resume-bg-input').value.trim();
+  if(!job || !background){ showToast('Add both the job description and your background'); return; }
+  const doc = document.getElementById('resume-doc-select').value;
+  await runMode({
+    statusEl: document.getElementById('resume-status'),
+    outputEl: document.getElementById('resume-output'),
+    btn: document.getElementById('resume-btn'),
+    loadingMsg: 'Matching your background to the role…',
+    errorMsg: "Couldn't draft that prompt. Try again in a moment.",
+    endpoint: '/api/resume',
+    payload: { job, background, doc },
+    breakdownFields: [
+      {key:'key_requirements_matched', label:'Requirements matched'},
+      {key:'gaps_to_address', label:'Gaps to address'},
+      {key:'tone', label:'Tone'}
+    ]
+  });
+}
+
+async function generateNotesPrompt(){
+  const notes = document.getElementById('notes-input').value.trim();
+  if(!notes){ showToast('Paste your notes first'); return; }
+  const format = document.getElementById('notes-format-select').value;
+  const tone = document.getElementById('notes-tone-select').value;
+  await runMode({
+    statusEl: document.getElementById('notes-status'),
+    outputEl: document.getElementById('notes-output'),
+    btn: document.getElementById('notes-btn'),
+    loadingMsg: 'Structuring your notes…',
+    errorMsg: "Couldn't draft that prompt. Try again in a moment.",
+    endpoint: '/api/notes',
+    payload: { notes, format, tone },
+    breakdownFields: [
+      {key:'structure_imposed', label:'Structure imposed'},
+      {key:'key_points_captured', label:'Key points captured'},
+      {key:'tone', label:'Tone'}
+    ]
+  });
+}
+
+</script>
+</body>
+</html>
